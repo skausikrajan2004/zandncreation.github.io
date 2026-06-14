@@ -1,0 +1,2823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Z & N Creation | Apex UZ Studios</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF Library for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #030303;
+            --surface: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --gold: #d4af37;
+            --gold-dim: rgba(212,175,55,0.15);
+            --cyan: #00d4ff;
+            --cyan-dim: rgba(0,212,255,0.15);
+            --text: #f0f0f0;
+            --text-dim: #888;
+            --red: #e63946;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* SPA View System */
+        .view {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glossy Nav */
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            padding: 1.2rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 100%);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            background: rgba(3,3,3,0.95);
+            padding: 0.8rem 4rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .brand-logo {
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--gold), #8a6e1c);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px var(--gold-dim);
+            border: 2px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .brand-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        .brand-text h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .brand-text span {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        /* Center Logo */
+        .center-logo {
+            position: absolute;
+            left: 40%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .center-logo img {
+            height: 65px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(212,175,55,0.3));
+            transition: all 0.3s ease;
+            border-radius: 16px;
+        }
+
+        .center-logo img:hover {
+            filter: drop-shadow(0 0 20px rgba(212,175,55,0.6));
+            transform: scale(1.05);
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-menu a, .nav-menu button {
+            text-decoration: none;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            position: relative;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .nav-menu a:hover, .nav-menu button:hover,
+        .nav-menu a.active, .nav-menu button.active {
+            color: var(--gold);
+        }
+
+        .nav-menu a::after, .nav-menu button::after {
+            content: '';
+            position: absolute;
+            bottom: -6px; left: 0;
+            width: 0; height: 2px;
+            background: var(--gold);
+            transition: width 0.3s;
+        }
+        .nav-menu a:hover::after, .nav-menu button:hover::after,
+        .nav-menu a.active::after, .nav-menu button.active::after { width: 100%; }
+
+        .search-btn {
+            background: none; border: none;
+            color: var(--text-dim);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .search-btn:hover { color: var(--gold); }
+
+        .mobile-toggle {
+            display: none;
+            background: none; border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            z-index: 1001;
+        }
+
+        /* ===== MOBILE MENU ===== */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1500;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .mobile-menu-overlay.active {
+            display: block;
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(180deg, rgba(10,10,10,0.98) 0%, rgba(20,20,20,0.95) 100%);
+            border-left: 1px solid var(--border);
+            padding: 5rem 2rem 2rem;
+            transition: right 0.3s ease;
+            z-index: 1600;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .mobile-menu-overlay.active .mobile-menu {
+            right: 0;
+        }
+
+        .mobile-menu-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .mobile-menu-close:hover {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .mobile-menu-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .mobile-menu-items a,
+        .mobile-menu-items button {
+            text-decoration: none;
+            color: var(--text);
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 1rem 1.5rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-align: left;
+            transition: all 0.3s;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .mobile-menu-items a:hover,
+        .mobile-menu-items button:hover,
+        .mobile-menu-items a.active,
+        .mobile-menu-items button.active {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+            transform: translateX(4px);
+        }
+
+        .mobile-menu-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mobile-menu-brand .brand-logo {
+            width: 50px; height: 50px;
+        }
+
+        .mobile-menu-brand .brand-text h1 {
+            font-size: 1.1rem;
+        }
+
+        .mobile-menu-brand .brand-text span {
+            font-size: 0.6rem;
+        }
+
+        /* Main Content offset */
+        main { padding-top: 90px; }
+
+        /* ===== HOME VIEW ===== */
+        .carousel-section {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .carousel-container {
+            position: relative;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 4rem;
+        }
+
+        .carousel-track-wrapper {
+            overflow: hidden;
+            border-radius: 24px;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            gap: 2rem;
+        }
+
+        .movie-slide {
+            min-width: 100%;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            aspect-ratio: 21/9;
+            background: #111;
+            cursor: pointer;
+        }
+
+        .movie-slide img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+        }
+        .movie-slide:hover img { transform: scale(1.05); }
+
+        .movie-slide::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .slide-content {
+            position: absolute;
+            bottom: 3rem; left: 3rem;
+            z-index: 2;
+            max-width: 500px;
+        }
+
+        .slide-badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: var(--gold-dim);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 100px;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .slide-content h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+
+        .slide-meta {
+            display: flex;
+            gap: 1.5rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+        .slide-meta span { color: var(--text); font-weight: 500; }
+
+        .carousel-arrow {
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+
+        .carousel-arrow:hover {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .arrow-left { left: 1.5rem; }
+        .arrow-right { right: 1.5rem; }
+
+        .explore-row {
+            text-align: center;
+            margin-top: 2.5rem;
+        }
+
+        .explore-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .explore-btn:hover {
+            color: var(--gold);
+            gap: 1.2rem;
+        }
+
+        .explore-btn .chevron {
+            font-size: 1.4rem;
+            transition: transform 0.3s;
+        }
+        .explore-btn:hover .chevron {
+            transform: translateX(4px);
+        }
+
+        .section-title {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 400;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin: 5rem 0 3rem;
+            color: var(--text);
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1rem auto 0;
+        }
+
+        .announcements, .videos-section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 4rem;
+        }
+
+        .announce-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .announce-card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 20px;
+            overflow: hidden;
+            background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            border: 1px solid var(--border);
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .announce-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(212,175,55,0.2);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 30px var(--gold-dim);
+        }
+
+        .announce-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .announce-thumb img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+        .announce-card:hover .announce-thumb img { transform: scale(1.1); }
+
+        .announce-thumb::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.6) 100%);
+        }
+
+        .announce-body {
+            padding: 1.5rem;
+        }
+
+        .announce-tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--cyan);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .announce-body h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.6rem;
+            line-height: 1.4;
+        }
+
+        .announce-body p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+
+        .video-item {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .video-item:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .video-item img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
+        .play-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .video-item:hover .play-overlay { opacity: 1; }
+
+        .play-icon {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .video-item:hover .play-icon {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            transform: scale(1.1);
+        }
+
+        .apex-bar {
+            background: linear-gradient(90deg, transparent, rgba(0,212,255,0.05), transparent);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem;
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        .apex-bar-content {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .apex-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: 0 0 15px var(--cyan);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .apex-bar h4 {
+            font-family: 'Cinzel', serif;
+            color: var(--cyan);
+            letter-spacing: 4px;
+            font-size: 1rem;
+        }
+
+        .apex-bar span {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        /* ===== MOVIES GRID VIEW ===== */
+        .movies-grid-view {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 4rem;
+        }
+
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .movie-grid-card {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 3/4;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.4s ease;
+            background: #111;
+        }
+
+        .movie-grid-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(212,175,55,0.3);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 40px var(--gold-dim);
+        }
+
+        .movie-grid-card img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+        .movie-grid-card:hover img { transform: scale(1.08); }
+
+        .movie-grid-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.9) 100%);
+            pointer-events: none;
+        }
+
+        .movie-grid-title {
+            position: absolute;
+            bottom: 1.5rem; left: 1.5rem;
+            z-index: 2;
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        .movie-grid-badge {
+            position: absolute;
+            top: 1rem; right: 1rem;
+            padding: 0.3rem 0.8rem;
+            background: var(--gold-dim);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 100px;
+            z-index: 2;
+            backdrop-filter: blur(4px);
+        }
+
+        /* ===== MOVIE DETAIL VIEW ===== */
+        .movie-detail-view {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 4rem 4rem;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            transition: color 0.3s;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .back-btn:hover { color: var(--gold); }
+
+        .movie-hero-poster {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 3rem;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .movie-hero-poster img {
+            width: 100%;
+            display: block;
+        }
+
+        .movie-description {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            max-width: 700px;
+            margin: 0 auto 3rem;
+        }
+
+        /* Tabs */
+        .media-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .media-tab {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0.5rem 0;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .media-tab:hover { color: var(--text); }
+        .media-tab.active {
+            color: var(--gold);
+        }
+        .media-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1rem; left: 0; right: 0;
+            height: 2px;
+            background: var(--gold);
+        }
+
+        .media-content {
+            display: none;
+        }
+        .media-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .video-embed-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .youtube-embed {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .youtube-embed iframe {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+            border-radius: 20px;
+        }
+
+        .video-meta {
+            text-align: center;
+            margin-top: 1.2rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        /* Cast & Crew */
+        .cast-section {
+            margin-top: 4rem;
+            text-align: center;
+        }
+
+        .cast-section h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            color: var(--text);
+        }
+
+        .cast-grid {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .cast-member {
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .cast-member:hover { transform: translateY(-5px); }
+
+        .cast-photo {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            margin: 0 auto 0.8rem;
+            transition: border-color 0.3s;
+        }
+        .cast-member:hover .cast-photo {
+            border-color: var(--gold);
+        }
+
+        .cast-photo img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
+        .cast-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 0.2rem;
+        }
+
+        .cast-role {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ===== VIDEOS PAGE ===== */
+        .videos-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 4rem 4rem;
+        }
+
+        .videos-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .videos-tab {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 0.5rem 0;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .videos-tab:hover { color: var(--text); }
+        .videos-tab.active {
+            color: var(--gold);
+        }
+        .videos-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1rem; left: 0; right: 0;
+            height: 2px;
+            background: var(--gold);
+        }
+
+        .videos-content {
+            display: none;
+        }
+        .videos-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        /* Interviews - YouTube Embed */
+        .interview-featured {
+            max-width: 900px;
+            margin: 0 auto 3rem;
+        }
+
+        .interview-title {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            color: var(--text);
+        }
+
+        .interview-meta {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .interviews-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .interview-card {
+            text-align: center;
+        }
+
+        .interview-card .youtube-embed {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .interview-card .youtube-embed iframe {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+            border-radius: 16px;
+        }
+
+        .interview-card-title {
+            margin-top: 1rem;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .interview-card-meta {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+        }
+
+        /* Behind the Scenes Grid */
+        .bts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .bts-card {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            background: #111;
+        }
+
+        .bts-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--gold);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+
+        .bts-card img,
+        .bts-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+            display: block;
+        }
+        .bts-card:hover img,
+        .bts-card:hover video { transform: scale(1.08); }
+
+        .bts-card .play-overlay {
+            opacity: 0;
+            background: rgba(0,0,0,0.5);
+            transition: opacity 0.3s;
+            cursor: pointer;
+        }
+        .bts-card:hover .play-overlay { opacity: 1; }
+
+        .bts-label {
+            position: absolute;
+            bottom: 1rem; left: 1rem;
+            padding: 0.3rem 0.8rem;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 0.8rem;
+            border-radius: 100px;
+            z-index: 3;
+            backdrop-filter: blur(4px);
+        }
+
+        .bts-desc {
+            padding: 1rem 1.2rem 1.2rem;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            text-align: center;
+            background: linear-gradient(180deg, transparent, rgba(255,255,255,0.02));
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            border-top: 1px solid var(--border);
+            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.5));
+            padding: 4rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-office {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-office strong {
+            color: var(--gold);
+            font-weight: 500;
+        }
+
+        .socials {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .socials a {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .socials a:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: var(--gold-dim);
+            transform: translateY(-3px);
+        }
+
+        .socials svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .copyright {
+            text-align: center;
+            margin-top: 3rem;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        /* ===== IMAGE/VIDEO PREVIEW MODAL ===== */
+        .image-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .image-preview-modal.active {
+            display: flex;
+        }
+
+        .image-preview-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 90vh;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid var(--gold);
+            box-shadow: 0 20px 80px rgba(212,175,55,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        .image-preview-content img,
+        .image-preview-content video {
+            max-width: 100%;
+            max-height: 85vh;
+            display: block;
+            object-fit: contain;
+            border-radius: 16px;
+            outline: none;
+        }
+
+        .image-preview-close {
+            position: absolute;
+            top: -45px;
+            right: 0;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 2rem;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 0.5rem;
+            z-index: 10;
+        }
+
+        .image-preview-close:hover {
+            color: var(--gold);
+        }
+
+        .image-preview-caption {
+            position: absolute;
+            bottom: -40px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* ===== ABOUT US MODAL ===== */
+        .about-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .about-modal.active {
+            display: flex;
+        }
+
+        .about-modal-content {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            max-width: 700px;
+            width: 100%;
+            padding: 2.5rem;
+            position: relative;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 60px var(--gold-dim);
+            animation: slideUp 0.4s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .about-modal-close {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.2rem;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .about-modal-close:hover {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .about-modal-logo {
+            width: 80px; 
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--gold), #8a6e1c);
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 0 25px var(--gold-dim);
+            border: 2px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .about-modal-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;  
+            object-position: center;
+            display: block;
+            transform: scale(1.15); 
+        }
+
+        .about-modal h2 {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            font-size: 1.8rem;
+            color: var(--gold);
+            letter-spacing: 3px;
+            margin-bottom: 1.5rem;
+        }
+
+        .about-modal p {
+            color: var(--text-dim);
+            line-height: 1.8;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .about-modal .highlight {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .about-modal .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem 0;
+        }
+
+        .about-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .about-stat {
+            text-align: center;
+        }
+
+        .about-stat-value {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .about-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ===== OWNER SECTION ===== */
+        .owner-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .owner-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 1rem;
+            border: 3px solid var(--gold);
+            box-shadow: 0 0 30px var(--gold-dim);
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .owner-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        .owner-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            color: var(--gold);
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            letter-spacing: 1px;
+        }
+
+        .owner-title {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* ===== FOOTER CONTACT FORM ===== */
+        .footer-contact {
+            max-width: 600px;
+            margin: 3rem auto 0;
+            padding: 2rem;
+            background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+
+        .footer-contact-title {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--gold);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem 1.2rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--gold);
+            background: rgba(212,175,55,0.05);
+            box-shadow: 0 0 15px var(--gold-dim);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-dim);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .contact-submit-btn {
+            padding: 0.9rem 2rem;
+            background: linear-gradient(135deg, var(--gold), #8a6e1c);
+            border: none;
+            border-radius: 12px;
+            color: #000;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .contact-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--gold-dim);
+        }
+
+        /* ===== LOGIN MODAL ===== */
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+        .login-modal.active { display: flex; }
+        .login-modal-content {
+            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            max-width: 500px;
+            width: 100%;
+            padding: 2.5rem;
+            position: relative;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 60px var(--gold-dim);
+            animation: slideUp 0.4s ease;
+        }
+        .login-modal-close {
+            position: absolute;
+            top: 1.2rem; right: 1.2rem;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+        .login-modal-close:hover {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .login-modal-content h2 {
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            font-size: 1.5rem;
+            color: var(--gold);
+            letter-spacing: 3px;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ===== INVESTOR PAGE ===== */
+        .investor-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 4rem 4rem;
+        }
+
+        .investor-docs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .investor-doc-panel {
+            background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .investor-doc-panel:hover {
+            border-color: rgba(212,175,55,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .investor-doc-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .investor-doc-image-wrapper {
+            width: 100%;
+            aspect-ratio: 3/4;
+            background: #111;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .investor-doc-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .investor-doc-actions {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .investor-btn {
+            padding: 0.7rem 1.5rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .investor-btn:hover {
+            background: var(--gold-dim);
+            border-color: var(--gold);
+            color: var(--gold);
+            transform: translateY(-2px);
+        }
+
+        .investor-notices {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        .notice-panel {
+            background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notice-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        .notice-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .notice-text {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+        .notice-text:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ===== DROPDOWN MENU ===== */
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(15, 15, 15, 0.98);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            min-width: 160px;
+            z-index: 100;
+            overflow: hidden;
+            margin-top: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .dropdown-item {
+            width: 100%;
+            padding: 0.8rem 1.2rem;
+            background: none;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: var(--gold-dim);
+            color: var(--gold);
+        }
+
+        @media (max-width: 768px) {
+            .footer-contact {
+                padding: 1.5rem 1rem;
+                margin: 2rem 1rem 0;
+            }
+            .footer-contact-title {
+                font-size: 1rem;
+                letter-spacing: 2px;
+            }
+            .investor-page { padding: 1rem; }
+            .notice-panel { padding: 1.5rem; }
+            .notice-title { font-size: 1.2rem; }
+            .investor-doc-actions { flex-direction: column; align-items: stretch; }
+            .investor-btn { width: 100%; }
+            .dropdown-container { width: 100%; }
+            .dropdown-menu { right: 0; left: 0; width: 100%; }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .announce-grid { grid-template-columns: repeat(2, 1fr); }
+            .video-grid { grid-template-columns: repeat(2, 1fr); }
+            .movies-grid { grid-template-columns: repeat(2, 1fr); }
+            .bts-grid { grid-template-columns: repeat(2, 1fr); }
+            .interviews-grid { grid-template-columns: 1fr; }
+            .navbar { padding: 1rem 2rem; }
+            .carousel-container { padding: 0 2rem; }
+            .slide-content h2 { font-size: 1.8rem; }
+            .movie-detail-view { padding: 2rem; }
+            .videos-page { padding: 2rem; }
+            .brand-logo { width: 60px; height: 60px; }
+            .center-logo img { height: 55px; }
+            .about-modal-content { padding: 2rem 1.5rem; }
+            .investor-docs-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu { display: none; }
+            .mobile-toggle { display: block; }
+            .announce-grid { grid-template-columns: 1fr; }
+            .video-grid { grid-template-columns: 1fr; }
+            .movies-grid { grid-template-columns: 1fr; }
+            .bts-grid { grid-template-columns: 1fr; }
+            .carousel-container { padding: 0 1rem; }
+            .slide-content { bottom: 1.5rem; left: 1.5rem; }
+            .slide-content h2 { font-size: 1.4rem; }
+            .carousel-arrow { width: 44px; height: 44px; font-size: 1.2rem; }
+            .arrow-left { left: 0.5rem; }
+            .arrow-right { right: 0.5rem; }
+            .footer-content { flex-direction: column; gap: 2rem; }
+            .media-tabs { gap: 1.5rem; }
+            .cast-grid { gap: 1rem; }
+            .videos-tabs { gap: 1.5rem; }
+            .center-logo { display: none; }
+            .image-preview-close { top: 10px; right: 10px; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+            .image-preview-caption { bottom: 10px; }
+            .about-modal-close { top: 10px; right: 10px; }
+            .about-modal h2 { font-size: 1.4rem; }
+            .about-stats { gap: 1rem; }
+            .about-stat-value { font-size: 1.2rem; }
+            .owner-photo { width: 100px; height: 100px; }
+            .owner-name { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar" id="navbar">
+        <a class="brand" onclick="showView('home')">
+            <div class="brand-logo">
+                <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreidbk7w2lyrbega6ty7isktuk7pqnnj7ncnpnuwsn7ijmhm4kqcaja" alt="Z & N Creation Logo">
+            </div>
+            <div class="brand-text">
+                <h1>Z & N Creation</h1>
+                <span>Media & Entertainment</span>
+            </div>
+        </a>
+        
+        <!-- Center Logo -->
+        <div class="center-logo">
+            <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreiakyuok7l4qjtifcyhienvmpzmueyihgat6gmw4dfv6y5iheui77q" alt="Center Logo">
+        </div>
+        
+        <ul class="nav-menu">
+            <li><button onclick="showView('home')" id="nav-home" class="active">Home</button></li>
+            <li><button onclick="showView('movies')" id="nav-movies">Movies</button></li>
+            <li><button onclick="showView('videos')" id="nav-videos">Gallery</button></li>
+            <li><button onclick="openAboutModal()">About Us</button></li>
+            <li><button onclick="openLoginModal()" id="nav-login">Login</button></li>
+        </ul>
+        
+        <button class="mobile-toggle" onclick="openMobileMenu()">☰</button>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu(event)">
+        <div class="mobile-menu">
+            <button class="mobile-menu-close" onclick="closeMobileMenuBtn()">×</button>
+            <div class="mobile-menu-brand">
+                <div class="brand-logo">
+                    <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreidbk7w2lyrbega6ty7isktuk7pqnnj7ncnpnuwsn7ijmhm4kqcaja" alt="Z & N Creation Logo">
+                </div>
+                <div class="brand-text">
+                    <h1>Z & N Creation</h1>
+                    <span>Media & Entertainment</span>
+                </div>
+            </div>
+            <div class="mobile-menu-items">
+                <button onclick="showView('home'); closeMobileMenuBtn();" id="mobile-nav-home" class="active">Home</button>
+                <button onclick="showView('movies'); closeMobileMenuBtn();" id="mobile-nav-movies">Movies</button>
+                <button onclick="showView('videos'); closeMobileMenuBtn();" id="mobile-nav-videos">Gallery</button>
+                <button onclick="openAboutModal(); closeMobileMenuBtn();">About Us</button>
+                <button onclick="openLoginModal(); closeMobileMenuBtn();" id="mobile-nav-login">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <!-- ===== HOME VIEW ===== -->
+        <div id="view-home" class="view active">
+            <!-- Movie Carousel -->
+            <section class="carousel-section">
+                <div class="carousel-container">
+                    <button class="carousel-arrow arrow-left" onclick="moveSlide(-1)">‹</button>
+                    
+                    <div class="carousel-track-wrapper">
+                        <div class="carousel-track" id="track">
+                            <div class="movie-slide" onclick="openMovieDetail('shanthala')">
+                                <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreifhw2jbqlcpiz4rtabxdqfjsitp33q2sr6anwyhkka3d5bryom54y" alt="Project Raaka">
+                                <div class="slide-content">
+                                    <div class="slide-badge">Apex UZ Studios</div>
+                                    <h2>SHANTHALA</h2>
+                                    <div class="slide-meta">
+                                        <div>CBFC: <span>Yet To Be Rated</span></div>
+                                        <div>Format: <span>2D/3D</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="movie-slide" onclick="openMovieDetail('shanthala')">
+                                <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreiahwmqt4abjcd5ktzmgrzc4sbenv3v4okvvrknkqzz3zphqi5ddtu" alt="Neon Horizon">
+                                <div class="slide-content">
+                                    <div class="slide-badge" style="border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim);">Z & N Creation</div>
+                                    <div class="slide-badge">Apex UZ Studios</div>
+                                    <h2>SHANTHALA</h2>
+                                    <div class="slide-meta">
+                                        <div>Genre: <span>Fantasy/Adventure</span></div>
+                                        <div>Status: <span>Pre-Production</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="movie-slide" onclick="openMovieDetail('shanthala')">
+                                <img src="https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreickuioaa4xho3uatxhe4eeheo65tl4ifx2xkyky5ajtwzmajdxaa4" alt="The Silent Echo">
+                                <div class="slide-content">
+                                    <div class="slide-badge">Upcoming</div>
+                                    <h2>SHANTHALA</h2>
+                                    <div class="slide-meta">
+                                        <div>Producer: <span>Abu Zakariah</span></div>
+                                        <div>Director: <span>Dil Sathya</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="carousel-arrow arrow-right" onclick="moveSlide(1)">›</button>
+                </div>
+                
+                <div class="explore-row">
+                    <button class="explore-btn" onclick="showView('movies')">
+                        Explore All Movies <span class="chevron">››</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Apex UZ Studios Bar -->
+            <div class="apex-bar">
+                <div class="apex-bar-content">
+                    <div class="apex-dot"></div>
+                    <h4>Apex UZ Studios</h4>
+                    <span>| A Subsidiary of Z & N Creation</span>
+                </div>
+            </div>
+
+            <!-- Announcements -->
+            <section>
+                <h2 class="section-title">Announcements</h2>
+                <div class="announcements">
+                    <div class="announce-grid">
+                        <div class="announce-card" onclick="showView('home')">
+                            <div class="announce-thumb">
+                                <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreia2clrdpesfx34rdiamivnwr6yu7p5iifct72nc6hxrjb6audsw5y" alt="Announcement">
+                            </div>
+                            <div class="announce-body">
+                                <div class="announce-tag">SCRIPT POOJA</div>
+                                <h3>Shanthala Script Pooja at Kollur Sri Mookambika Devi Temple</h3>
+                                <p> A New Cinematic Journey Begins, Here is the Stills of script pooja for the movie "Shanthala".</p>
+                            </div>
+                        </div>
+                        
+                        <div class="announce-card" onclick="showView('home')">
+                            <div class="announce-thumb">
+                                <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreic6mhdb534rvyuyk3jxbzeuuy4ter2juaci47z7upvw6q6jwfbjqu" alt="Announcement">
+                            </div>
+                            <div class="announce-body">
+                                <div class="announce-tag" style="color: var(--gold);">Apex UZ Studios</div>
+                                <h3>Shanthala Movie Recce</h3>
+                                <p>Production crew explores an industrial harbor during an location recce on the Film "Shanthala".</p>
+                            </div>
+                        </div>
+                        
+                        <div class="announce-card" onclick="showView('home')">
+                            <div class="announce-thumb">
+                                <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreibklraj7p3byslik5fu43nqexowr27apdbiemj47bzvldoax4opqq" alt="Announcement">
+                            </div>
+                            <div class="announce-body">
+                                <div class="announce-tag">SHANTHALA SONG COMPOSING</div>
+                                <h3>Song Composing in Progress</h3>
+                                <p>Music director MN Krupakar composes the Music Track for the Film "Shanthala" in Bangalore.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="explore-row" style="margin-top: 2.5rem;">
+                    <button class="explore-btn" onclick="showView('home')">
+                        Explore Announcements <span class="chevron">››</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Latest Videos -->
+            <section style="margin-top: 4rem;">
+                <h2 class="section-title">Latest Videos</h2>
+                <div class="videos-section">
+                    <div class="video-grid">
+                        <div class="video-item" onclick="showView('videos')">
+                            <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreicjkfp246a73thy4emauedir47ojvcf4td3afbvfogypufzfhltaq" alt="Video">
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                        <div class="video-item" onclick="showView('videos')">
+                            <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreib5low5lb4cqxg65lxzoorx55sgj3onb7mkwjuwtudcujvaxojueq" alt="Video">
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                        <div class="video-item" onclick="showView('videos')">
+                            <img src="https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreieojvdpebpandw66glrfd26oxt5stxyoa3um653l3miinvt7xi2fa" alt="Video">
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                        <div class="video-item" onclick="showView('videos')">
+                            <img src="https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreicnewaeutgsonhiaztid4s6wj7rem3zteqcb5vnadqb3loz6jlhtq" alt="Video">
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== MOVIES GRID VIEW ===== -->
+        <div id="view-movies" class="view">
+            <h2 class="section-title">PROJECTS</h2>
+            <div class="movies-grid-view">
+                <div class="movies-grid">
+                    <div class="movie-grid-card" onclick="openMovieDetail('shanthala')">
+                        <img src="https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreickuioaa4xho3uatxhe4eeheo65tl4ifx2xkyky5ajtwzmajdxaa4" alt="DC">
+                        <span class="movie-grid-badge">Upcoming</span>
+                        <span class="movie-grid-title">SHANTHALA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== MOVIE DETAIL VIEW ===== -->
+        <div id="view-movie-detail" class="view">
+            <div class="movie-detail-view">
+                <button class="back-btn" onclick="goBack()">‹ Back to Movies</button>
+                
+                <div class="movie-hero-poster">
+                    <img id="detail-poster" src="" alt="Movie Poster">
+                </div>
+                
+                <p class="movie-description" id="detail-desc"></p>
+                
+                <!-- Media Tabs -->
+                <div class="media-tabs">
+                    <button class="media-tab active" onclick="switchTab('trailer', event)">Trailer</button>
+                    <button class="media-tab" onclick="switchTab('teaser', event)">Teaser</button>
+                    <button class="media-tab" onclick="switchTab('songs', event)">Songs</button>
+                </div>
+                
+                <!-- Trailer Content -->
+                <div id="tab-trailer" class="media-content active">
+                    <div class="video-embed-container">
+                        <div class="youtube-embed">
+                            <iframe id="trailer-iframe" src="" title="Movie Trailer" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="video-meta">Official Trailer •</div>
+                    </div>
+                </div>
+                
+                <!-- Teaser Content -->
+                <div id="tab-teaser" class="media-content">
+                    <div class="video-embed-container">
+                        <div class="youtube-embed">
+                            <iframe id="teaser-iframe" src="" title="Movie Teaser" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="video-meta">Title Teaser</div>
+                    </div>
+                </div>
+                
+                <!-- Songs Content -->
+                <div id="tab-songs" class="media-content">
+                    <div class="video-embed-container">
+                        <div class="youtube-embed">
+                            <iframe id="songs-iframe" src="" title="Movie Songs" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="video-meta">Glimpse - Audio Jukebox</div>
+                    </div>
+                </div>
+                
+                <!-- Cast & Crew -->
+                <div class="cast-section">
+                    <h3>Cast & Crew</h3>
+                    <div class="cast-grid" id="cast-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== VIDEOS PAGE ===== -->
+        <div id="view-videos" class="view">
+            <h2 class="section-title">Gallery</h2>
+            <div class="videos-page">
+                <!-- Videos Tabs -->
+                <div class="videos-tabs">
+                    <button class="videos-tab active" onclick="switchVideosTab('interviews', event)">Production Diaries</button>
+                    <button class="videos-tab" onclick="switchVideosTab('bts', event)">Behind the Scenes</button>
+                </div>
+
+                <!-- Interviews Content -->
+                <div id="videos-tab-interviews" class="videos-content active">
+                    <div class="interview-featured">
+                        <div class="youtube-embed">
+                            <iframe src="https://www.youtube.com/embed/70qpw6vwzyA?si=_v4pi-tjmeR8hQKF" title="Featured Interview" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="interview-title">Shanthala Movie Location Recce: Exploring Wayanad</div>
+                        <div class="interview-meta">Z & N Creation • Apex UZ Studios • Shanthala</div>
+                    </div>
+
+                    <div class="interviews-grid" style="margin-top: 3rem;">
+                        <div class="interview-card">
+                            <div class="youtube-embed">
+                                <iframe src="https://www.youtube.com/embed/j8qj_YwPZ6k?si=yMejm-AUAu72_0Q5" title="Interview 1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <div class="interview-card-title">Song Shoot BTS | Shanthala Movie Location Video</div>
+                            <div class="interview-card-meta">Z & N Creation • Apex UZ Studios • Shanthala</div>
+                        </div>
+                        <div class="interview-card">
+                            <div class="youtube-embed">
+                                <iframe src="https://www.youtube.com/embed/d0JbzeXXq5g?si=j3VJXePZeX6fUyqg" title="Interview 2" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <div class="interview-card-title">Tribal Village Set Making | Shanthala Movie Visuals</div>
+                            <div class="interview-card-meta">Z & N Creation • Apex UZ Studios • Shanthala</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Behind the Scenes Content -->
+                <div id="videos-tab-bts" class="videos-content">
+                    <div class="bts-grid">
+                        <div class="bts-card" onclick="openImagePreview(this)">
+                            <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreicavrorc5g4elacnqxkpkkacna2tfgnzvb2zqxrceq2abnc7qv5ey" alt="BTS On Location" data-caption="Exclusive footage from the Hyderabad outdoor sets during the climax sequence shoot.">
+                            <span class="bts-label">StoryBoard Making (Shanthala)</span>
+                            <div class="play-overlay">
+                                <div class="play-icon">🔍️</div>
+                            </div>
+                            <div class="bts-desc">Exclusive footage from the Hyderabad outdoor sets during the climax sequence shoot.</div>
+                        </div>
+                        <div class="bts-card" onclick="openImagePreview(this)">
+                            <video 
+                                src="https://ik.imagekit.io/reavznbru/Music%20Composition%20Final.mp4" 
+                                poster="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreiemnzub4neuhmuc2nxgakr5inalbf2evzpxqqe4pkhrr3vrkktbae"
+                                alt="BTS Making Of" 
+                                data-caption="A deep dive into the 180-day production schedule and the challenges faced by the crew."
+                                preload="metadata"
+                                muted
+                                loop
+                                playsinline
+                            ></video>
+                            <span class="bts-label">Background Score (Shanthala)</span>
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                            <div class="bts-desc">A deep dive into the 180-day production schedule and the challenges faced by the crew.</div>
+                        </div>
+                        <div class="bts-card" onclick="openImagePreview(this)">
+                            <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreibnxv7f7g637dz77v2oviowak3vdqiwokjkgfbsefw6xfar27oery" alt="BTS Stunt Rehearsal" data-caption="Behind-the-scenes look at the intense stunt choreography for the opening action block.">
+                            <span class="bts-label">Pre Visual Work (Shanthala)</span>
+                            <div class="play-overlay">
+                                <div class="play-icon">🔍</div>
+                            </div>
+                            <div class="bts-desc">Behind-the-scenes look at the intense stunt choreography for the opening action block.</div>
+                        </div>
+                        <div class="bts-card" onclick="openImagePreview(this)">
+                            <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreibklraj7p3byslik5fu43nqexowr27apdbiemj47bzvldoax4opqq" alt="BTS VFX Breakdown" data-caption="Visual effects breakdown showing the transformation from raw footage to final cinematic shots.">
+                            <span class="bts-label">Team of Shanthala</span>
+                            <div class="play-overlay">
+                                <div class="play-icon">🔍</div>
+                            </div>
+                            <div class="bts-desc">Visual effects breakdown showing the transformation from raw footage to final cinematic shots.</div>
+                        </div>
+                        <div class="bts-card" onclick="openImagePreview(this)">
+                            <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreiciuwyzriccoyc4gqliosjin6drpji2d2gcavrhphheizfhuiz4bq" alt="BTS Costume Design" data-caption="Designer Anu Vardhan explains the character-driven wardrobe choices for the lead cast.">
+                            <span class="bts-label">Script Pooja (Shanthala)</span>
+                            <div class="play-overlay">
+                                <div class="play-icon">🔍</div>
+                            </div>
+                            <div class="bts-desc">Designer Anu Vardhan explains the character-driven wardrobe choices for the lead cast.</div>
+                        </div>
+                        <div class="bts-card" onclick="openImagePreview(this)">
+                            <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreifemdufyqsrfqpbwybb7yp7aiwopeguc6wo4wqafe7kgyfapi6ktm" alt="BTS Music Sessions" data-caption="Anirudh and the orchestra recording the background score at Abbey Road Studios.">
+                            <span class="bts-label">Location Recce (Shanthala)</span>
+                            <div class="play-overlay">
+                                <div class="play-icon">🔍</div>
+                            </div>
+                            <div class="bts-desc">Anirudh and the orchestra recording the background score at Abbey Road Studios.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== INVESTOR PAGE ===== -->
+        <div id="view-investor" class="view">
+            <div class="investor-page">
+                <h2 class="section-title">Investor Portal</h2>
+                
+                <!-- Document Panels -->
+                <div class="investor-docs-grid">
+                    <div class="investor-doc-panel">
+                        <h3 class="investor-doc-title">Tamil Film Producer Council Registration</h3>
+                        <div class="investor-doc-image-wrapper">
+                            <img id="doc-img-1" src="https://ik.imagekit.io/1phy3umr4/producer%20regisatration.png" alt="Tamil Film Producer Council Registration">
+                        </div>
+                        <div class="investor-doc-actions">
+                            <button class="investor-btn" onclick="previewInvestorImage('doc-img-1')">Preview</button>
+                            <div class="dropdown-container">
+                                <button class="investor-btn dropdown-toggle" onclick="toggleDropdown(event, 'dropdown-1')">Download ▾</button>
+                                <div class="dropdown-menu" id="dropdown-1">
+                                    <button class="dropdown-item" onclick="downloadImage('doc-img-1', 'Tamil_Film_Producer_Council_Registration', 'jpg')">Download JPG</button>
+                                    <button class="dropdown-item" onclick="downloadImage('doc-img-1', 'Tamil_Film_Producer_Council_Registration', 'pdf')">Download PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="investor-doc-panel">
+                        <h3 class="investor-doc-title">Script Registration Certificate</h3>
+                        <div class="investor-doc-image-wrapper">
+                            <img id="doc-img-2" src="https://ik.imagekit.io/1phy3umr4/Script%20Reg.jpeg" alt="Script Registration Certificate">
+                        </div>
+                        <div class="investor-doc-actions">
+                            <button class="investor-btn" onclick="previewInvestorImage('doc-img-2')">Preview</button>
+                            <div class="dropdown-container">
+                                <button class="investor-btn dropdown-toggle" onclick="toggleDropdown(event, 'dropdown-2')">Download ▾</button>
+                                <div class="dropdown-menu" id="dropdown-2">
+                                    <button class="dropdown-item" onclick="downloadImage('doc-img-2', 'Script_Registration_Certificate', 'jpg')">Download JPG</button>
+                                    <button class="dropdown-item" onclick="downloadImage('doc-img-2', 'Script_Registration_Certificate', 'pdf')">Download PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notice Panels -->
+                <div class="investor-notices">
+                    <div class="notice-panel">
+                        <h3 class="notice-title">SHANTHALA – Synopsis</h3>
+                        <p class="notice-text">Shanthala is a fantasy adventure that bridges an ancient legend with the modern world. On a remote, uninhabited island lives a master sculptor who has raised Shanthala, a mysterious young woman blessed with extraordinary powers. Uthiran, a medical student whose father is a renowned Siddha physician and whose grandmother possesses prophetic wisdom, arrives on the island with a research team.</p>
+                        <p class="notice-text">As Uthiran discovers Shanthala’s unique abilities, powerful forces begin to close in—one group seeks to abduct her and exploit her gift, while another aims to plunder the island’s hidden mineral wealth. When these dangerous interests converge, the fate of the island, Shanthala, and the nation itself hangs in the balance.</p>
+                        <p class="notice-text">Blending mythology, mystery, adventure, and emotion, Shanthala unfolds a gripping journey that reveals the sculptor’s lifelong dream and a destiny that connects the ancient past with the present day.</p>
+                    </div>
+
+                    <div class="notice-panel">
+                        <h3 class="notice-title">Production Vision</h3>
+                        <p class="notice-text">Shanthala is envisioned as a grand cinematic spectacle with an estimated production budget of ₹100 Crore. The film marks the debut of Hariharan in a powerful lead role and is planned to feature an ensemble cast including Tamannaah Bhatia, Nana Patekar, Jayaram, Samuthirakani, Vinayakan, Gautham Vasudev Menon, and several other leading stars from Indian cinema. Discussions and negotiations with the cast are set to commence shortly.</p>
+                        <p class="notice-text">Designed as a visually breathtaking fantasy adventure, Shanthala will be brought to life using cutting-edge 3D technology, blending mythology, mystery, and action on an epic scale. The project aims to collaborate with renowned Hollywood technicians and world-class visual effects artists to create an immersive cinematic experience that transcends boundaries.</p>
+                        <p class="notice-text">With its rich storytelling, spectacular visuals, and international production standards, Shanthala is poised to emerge as one of the most ambitious and technologically advanced films in Indian cinema, offering audiences a larger-than-life journey that connects ancient legends with the modern world.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Image/Video Preview Modal -->
+    <div class="image-preview-modal" id="imagePreviewModal" onclick="closeImagePreview(event)">
+        <div class="image-preview-content">
+            <button class="image-preview-close" onclick="closeImagePreviewModal()">×</button>
+            <div class="image-preview-caption" id="previewCaption"></div>
+        </div>
+    </div>
+
+    <!-- About Us Modal -->
+    <div class="about-modal" id="aboutModal" onclick="closeAboutModal(event)">
+        <div class="about-modal-content">
+            <button class="about-modal-close" onclick="closeAboutModalBtn()">×</button>
+            <div class="about-modal-logo">
+                <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreidbk7w2lyrbega6ty7isktuk7pqnnj7ncnpnuwsn7ijmhm4kqcaja" alt="Z & N Creation Logo">
+            </div>
+            <h2>About Z & N Creation</h2>
+            <p>Z and N Creation began its journey with strategic investments in the <span class="highlight">Mining Industry</span> laying a strong foundation for long-term growth and expansion. Building on this success, the company diversified its portfolio through investments in shares of various leading companies across multiple sectors.</p>
+            <p>Over the years, <span class="highlight">Z and N Creation</span> has also contributed significantly to urban development by acquiring and developing prime properties in major cities including Mysuru, Bengaluru, Chennai, and key cities across Kerala. Through its real estate initiatives, the company has played an active role in supporting modern infrastructure and city expansion.</p>
+            <div class="divider"></div>
+            <p><span class="highlight">Today, Z and N Creation is focused on the media and entertainment industry. Following its successful involvement in television productions, the company is now venturing into the silver screen with the production of a grand, high-budget feature film, marking a new milestone in its creative and business journey.</p>
+            <div class="about-stats">
+                <div class="about-stat">
+                    <div class="about-stat-value">50+</div>
+                    <div class="about-stat-label">Projects</div>
+                </div>
+                <div class="about-stat">
+                    <div class="about-stat-value">15+</div>
+                    <div class="about-stat-label">Awards</div>
+                </div>
+                <div class="about-stat">
+                    <div class="about-stat-value">100M+</div>
+                    <div class="about-stat-label">Views</div>
+                </div>
+            </div>
+
+            <!-- Owner Section -->
+            <div class="owner-section">
+                <div class="owner-photo">
+                    <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreib7djcdhrglqowu5tyad44swzwmsravicfb6madjatqiajkhpohkm" alt="Company Owner">
+                </div>
+                <div class="owner-name">Abu Zakariah</div>
+                <div class="owner-title">Founder & CEO</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="loginModal" onclick="closeLoginModal(event)">
+        <div class="login-modal-content">
+            <button class="login-modal-close" onclick="closeLoginModalBtn()">×</button>
+            <div class="about-modal-logo">
+                <img src="https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreidbk7w2lyrbega6ty7isktuk7pqnnj7ncnpnuwsn7ijmhm4kqcaja" alt="Z & N Creation Logo">
+            </div>
+            <h2>Investor Login</h2>
+            <form class="contact-form" onsubmit="handleLogin(event)" style="max-width: 400px; margin: 0 auto;">
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="Enter Access Key" required>
+                </div>
+                <button type="submit" class="contact-submit-btn">Login</button>
+                <p id="loginError" style="color: var(--red); text-align: center; font-size: 0.85rem; margin-top: 1rem; display: none;">Invalid Access Key</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-office">
+                <strong>Office Address:</strong><br>
+                No. 518/B, 8th Cross, Tank Road, N.R. Mohalla, Mysore
+            </div>
+            <div class="footer-office">
+                <strong>Project Office Address:</strong><br>
+                No. 518/B, 8th Cross, Tank Road, N.R. Mohalla, Mysore
+            </div>
+            
+            <div class="socials">
+                <a href="https://www.facebook.com/share/19NM9pedns/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                    <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </a>
+                <a href="https://www.instagram.com/apexuzstudios?igsh=MTNmeTkyOHJ1b2pjdQ==" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                    <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                </a>
+                <a href="https://x.com/apexuzstudios" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                    <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </a>
+                <a href="https://youtube.com/@shanthalamovie?si=3BxCXjaXG8-wJdwG" target="_blank" rel="noopener noreferrer" aria-label="Youtube">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-youtube" viewBox="0 0 16 16"><path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.01 2.01 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.01 2.01 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31 31 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.01 2.01 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A100 100 0 0 1 7.858 2zM6.4 5.209v4.818l4.157-2.408z"/></svg>
+                </a>
+            </div>
+        </div>
+        <div class="footer-contact">
+            <h3 class="footer-contact-title">Get In Touch</h3>
+            <form class="contact-form" onsubmit="sendMail(event)">
+                <div class="form-group">
+                    <input type="text" id="contactSubject" placeholder="Subject" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="contactMessage" placeholder="Your Message" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="contact-submit-btn">Send Message</button>
+            </form>
+        </div>
+        <div class="copyright">
+             © Z & N Creation - All Rights Reserved 2026.
+             Managed by Reelook 
+        </div>
+    </footer>
+
+    <script>
+        // ===== VIEW NAVIGATION =====
+        let previousView = 'home';
+
+        function showView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const target = document.getElementById('view-' + viewName);
+            if (target) {
+                target.classList.add('active');
+                previousView = viewName === 'movie-detail' ? previousView : viewName;
+            }
+            document.querySelectorAll('.nav-menu button').forEach(btn => btn.classList.remove('active'));
+            const navBtn = document.getElementById('nav-' + viewName);
+            if (navBtn) navBtn.classList.add('active');
+            if (viewName === 'home') document.getElementById('nav-home').classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goBack() {
+            showView(previousView === 'movie-detail' ? 'movies' : previousView);
+        }
+
+        // ===== VIDEOS TAB SWITCHING =====
+        function switchVideosTab(tabName, event) {
+            document.querySelectorAll('.videos-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.videos-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('videos-tab-' + tabName).classList.add('active');
+        }
+
+        // ===== MOVIE DATA =====
+        const movieData = {
+            shanthala: {
+                title: 'SHANTHALA',
+                poster: 'https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreickuioaa4xho3uatxhe4eeheo65tl4ifx2xkyky5ajtwzmajdxaa4',
+                desc: 'SHANTHALA is a mythological cinematic epic that bridges the past and the present through a powerful narrative centered around an ancient force lost across centuries. The story explores what would happen if such a mystical power resurfaces in the modern world, and the intense conflict that follows in the struggle to possess and control it.The film is uniquely crafted by connecting two timelines a majestic royal kingdom from centuries ago and the present day unfolding a gripping journey of destiny, power, and legacy.Mounted on a grand scale with a massive production budget, SHANTHALA is being filmed across spectacular sets and breathtaking natural landscapes never before seen on screen. Featuring an ensemble cast of leading actors, the film is being brought to life with world-class visual effects, stunning cinematic sequences, and the collaboration of internationally acclaimed technical artists and creative professionals.SHANTHALA promises an immersive visual spectacle that blends mythology, history, fantasy, and modern storytelling into an unforgettable cinematic experience.',
+                trailer: 'https://www.youtube.com/embed/iOZ8K8hH5W8?si=e1aHUZLG1nHBIbnD',
+                teaser: 'https://www.youtube.com/embed/GAxHHDmEanc?si=YY4FNbeSXn3A163C',
+                songs: 'https://www.youtube.com/embed/iOZ8K8hH5W8?si=e1aHUZLG1nHBIbnD',
+                cast: [
+                    { name: 'Abu Zakkriah', role: 'Producer', img: 'https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreib7djcdhrglqowu5tyad44swzwmsravicfb6madjatqiajkhpohkm' },
+                    { name: 'K.Sathyaa', role: 'Director', img: 'https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreie3fw5ktmkk32vsgixze4lkvm4kizbw3453hl43lk76clqhtny6fe' },
+                    { name: 'M.N Krupakar', role: 'Music Director', img: 'https://images.moviebuff.com/6a953580-e819-4abb-8e9c-ac582009a526?w=600' },
+                    { name: 'Mahesh Talakad', role: 'Cinematographer', img: 'https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:qzt2n6h2o4zdkhqcdqhugkcu/bafkreih5dqkxmnm6hyjqn64pu6doojbi2crl356lrha7pzzdktjnlespni' }
+                ]
+            },
+            raaka: {
+                title: 'Raaka',
+                poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80',
+                desc: 'A storm ready to dominate the screen. Raaka is an epic action saga featuring Allu Arjun in a never-before-seen avatar, directed by the visionary Atlee Kumar.',
+                trailer: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                teaser: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                songs: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                cast: [
+                    { name: 'Allu Arjun', role: 'Actor', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&q=80' },
+                    { name: 'Rashmika', role: 'Actress', img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80' },
+                    { name: 'Atlee Kumar', role: 'Director', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
+                    { name: 'Anirudh', role: 'Music Director', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80' }
+                ]
+            },
+            jailer2: {
+                title: 'Jailer 2',
+                poster: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80',
+                desc: 'The legend returns. Jailer 2 continues the saga of Muthuvel Pandian as he faces his most dangerous adversary yet. A Sun Pictures legacy production.',
+                trailer: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                teaser: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                songs: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                cast: [
+                    { name: 'Rajinikanth', role: 'Actor', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&q=80' },
+                    { name: 'Nelson', role: 'Director', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80' },
+                    { name: 'Anirudh', role: 'Music', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80' }
+                ]
+            },
+            neon: {
+                title: 'Neon Horizon',
+                poster: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80',
+                desc: 'In a world where memories can be traded like currency, one man discovers the truth about his past. A Z & N Original sci-fi thriller pushing the boundaries of storytelling.',
+                trailer: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                teaser: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                songs: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                cast: [
+                    { name: 'Vijay D', role: 'Actor', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
+                    { name: 'Samantha', role: 'Actress', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80' },
+                    { name: 'Lokesh K', role: 'Director', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80' }
+                ]
+            },
+            silent: {
+                title: 'The Silent Echo',
+                poster: 'https://images.unsplash.com/photo-1517604931442-71053e3e2f26?w=800&q=80',
+                desc: 'When sound becomes a weapon, silence is survival. An Apex UZ Studios production that redefines the thriller genre with immersive sound design.',
+                trailer: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                teaser: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                songs: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                cast: [
+                    { name: 'Vijay D', role: 'Actor', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
+                    { name: 'Trisha', role: 'Actress', img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80' },
+                    { name: 'Lokesh K', role: 'Director', img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80' }
+                ]
+            },
+            record: {
+                title: 'Record Breaker',
+                poster: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=800&q=80',
+                desc: 'Based on a true story, Record Breaker chronicles the journey of an underdog athlete who defies all odds to set a world record. An inspiring Z & N Creation drama.',
+                trailer: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                teaser: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                songs: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                cast: [
+                    { name: 'Siva K', role: 'Actor', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&q=80' },
+                    { name: 'Priyanka', role: 'Actress', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80' },
+                    { name: 'Atlee', role: 'Director', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' }
+                ]
+            }
+        };
+
+        function openMovieDetail(movieId) {
+            const data = movieData[movieId];
+            if (!data) return;
+            document.getElementById('detail-poster').src = data.poster;
+            document.getElementById('detail-desc').textContent = data.desc;
+            document.getElementById('trailer-iframe').src = data.trailer;
+            document.getElementById('teaser-iframe').src = data.teaser;
+            document.getElementById('songs-iframe').src = data.songs;
+            const castGrid = document.getElementById('cast-grid');
+            castGrid.innerHTML = data.cast.map(member => `
+                <div class="cast-member">
+                    <div class="cast-photo">
+                        <img src="${member.img}" alt="${member.name}">
+                    </div>
+                    <div class="cast-name">${member.name}</div>
+                    <div class="cast-role">${member.role}</div>
+                </div>
+            `).join('');
+            document.querySelectorAll('.media-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.media-tab').classList.add('active');
+            document.querySelectorAll('.media-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-trailer').classList.add('active');
+            showView('movie-detail');
+        }
+
+        function switchTab(tabName, event) {
+            document.querySelectorAll('.media-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.media-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // ===== CAROUSEL (Home) =====
+        let currentSlide = 0;
+        const track = document.getElementById('track');
+        const slides = track ? track.children : [];
+        const totalSlides = slides.length;
+
+        function moveSlide(direction) {
+            currentSlide = (currentSlide + direction + totalSlides) % totalSlides;
+            track.style.transform = `translateX(-${currentSlide * 100}%)`;
+        }
+
+        setInterval(() => {
+            if (document.getElementById('view-home').classList.contains('active')) {
+                moveSlide(1);
+            }
+        }, 6000);
+
+        // ===== NAVBAR SCROLL =====
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // ===== MOBILE MENU =====
+        function openMobileMenu() {
+            const overlay = document.getElementById('mobileMenuOverlay');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            updateMobileMenuActiveState();
+        }
+
+        function closeMobileMenuBtn() {
+            const overlay = document.getElementById('mobileMenuOverlay');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function closeMobileMenu(event) {
+            if (event.target === document.getElementById('mobileMenuOverlay')) {
+                closeMobileMenuBtn();
+            }
+        }
+
+        function updateMobileMenuActiveState() {
+            // Sync active state with desktop nav
+            const currentView = document.querySelector('.view.active').id.replace('view-', '');
+            document.querySelectorAll('.mobile-menu-items button').forEach(btn => btn.classList.remove('active'));
+            const mobileBtn = document.getElementById('mobile-nav-' + currentView);
+            if (mobileBtn) mobileBtn.classList.add('active');
+        }
+
+        // ===== IMAGE/VIDEO PREVIEW MODAL =====
+        function openImagePreview(card) {
+            const modal = document.getElementById('imagePreviewModal');
+            const previewContainer = document.querySelector('.image-preview-content');
+            const previewCaption = document.getElementById('previewCaption');
+            
+            // Remove existing media but keep close button and caption
+            const existingMedia = previewContainer.querySelector('img, video');
+            if (existingMedia) {
+                if (existingMedia.tagName.toLowerCase() === 'video') {
+                    existingMedia.pause();
+                    existingMedia.src = '';
+                }
+                existingMedia.remove();
+            }
+            
+            const media = card.querySelector('video, img');
+            if (!media) return;
+            
+            if (media.tagName.toLowerCase() === 'video') {
+                // Create NEW video element for modal
+                const video = document.createElement('video');
+                // Use clean URL without cache-busting to avoid reload issues
+                video.src = media.src;
+                video.poster = media.poster || '';
+                video.alt = media.alt || 'Video Preview';
+                video.controls = true;
+                video.autoplay = false; // Don't autoplay - let user click play
+                video.muted = false; // Unmute so user can hear
+                video.playsInline = true;
+                video.style.maxWidth = '100%';
+                video.style.maxHeight = '85vh';
+                video.style.borderRadius = '16px';
+                video.style.display = 'block';
+                video.style.outline = 'none';
+                video.style.background = '#000';
+                
+                // Add click-to-play hint
+                video.title = 'Click to play';
+                
+                previewContainer.insertBefore(video, previewCaption);
+                
+                // Try to play after a short delay (user interaction context)
+                setTimeout(() => {
+                    video.play().catch(e => {
+                        // Autoplay failed - that's OK, controls are visible for manual play
+                        console.log('Video autoplay prevented (expected):', e.message);
+                    });
+                }, 300);
+                
+            } else {
+                // Create image element for modal
+                const img = document.createElement('img');
+                img.src = media.src;
+                img.alt = media.alt || 'Preview';
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '90vh';
+                img.style.display = 'block';
+                img.style.objectFit = 'contain';
+                previewContainer.insertBefore(img, previewCaption);
+            }
+            
+            previewCaption.textContent = media.dataset.caption || '';
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImagePreviewModal() {
+            const modal = document.getElementById('imagePreviewModal');
+            const video = modal.querySelector('video');
+            if (video) {
+                video.pause();
+                video.src = ''; // Clear source to stop all playback and free memory
+            }
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function closeImagePreview(event) {
+            if (event.target === document.getElementById('imagePreviewModal')) {
+                closeImagePreviewModal();
+            }
+        }
+
+        // ===== ABOUT US MODAL =====
+        function openAboutModal() {
+            const modal = document.getElementById('aboutModal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAboutModalBtn() {
+            const modal = document.getElementById('aboutModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function closeAboutModal(event) {
+            if (event.target === document.getElementById('aboutModal')) {
+                closeAboutModalBtn();
+            }
+        }
+
+        // ===== LOGIN LOGIC =====
+        function openLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLoginModalBtn() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        function closeLoginModal(event) {
+            if (event.target === document.getElementById('loginModal')) {
+                closeLoginModalBtn();
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const input = document.getElementById('loginPassword').value;
+            const errorText = document.getElementById('loginError');
+            
+            if (!input) return;
+
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            const storedHash = 'c0f12efa87f2a7e38640dbdcbd64d31e0f2e4d93b20223825a28939ba96d66c9'; 
+
+            if (hashHex === storedHash) {
+                closeLoginModalBtn();
+                showView('investor');
+            } else {
+                errorText.style.display = 'block';
+                document.getElementById('loginPassword').value = '';
+            }
+        }
+
+        // ===== INVESTOR PAGE PREVIEW =====
+        function previewInvestorImage(imgId) {
+            const imgElement = document.getElementById(imgId);
+            if (!imgElement || !imgElement.src) return;
+            
+            const modal = document.getElementById('imagePreviewModal');
+            const previewContainer = document.querySelector('.image-preview-content');
+            const previewCaption = document.getElementById('previewCaption');
+            
+            const existingMedia = previewContainer.querySelector('img, video');
+            if (existingMedia) existingMedia.remove();
+            
+            const img = document.createElement('img');
+            img.src = imgElement.src;
+            img.alt = imgElement.alt || 'Preview';
+            img.style.maxWidth = '100%';
+            img.style.maxHeight = '90vh';
+            img.style.display = 'block';
+            img.style.objectFit = 'contain';
+            previewContainer.insertBefore(img, previewCaption);
+            
+            previewCaption.textContent = imgElement.alt || '';
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // ===== DROPDOWN LOGIC =====
+        function toggleDropdown(event, dropdownId) {
+            event.stopPropagation();
+            const dropdown = document.getElementById(dropdownId);
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                if (menu.id !== dropdownId) menu.classList.remove('show');
+            });
+            dropdown.classList.toggle('show');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.dropdown-container')) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(menu => menu.classList.remove('show'));
+            }
+        });
+
+        // ===== DOWNLOAD LOGIC =====
+        async function downloadImage(imgId, filename, format) {
+            const imgElement = document.getElementById(imgId);
+            if (!imgElement || !imgElement.src) return;
+
+            const url = imgElement.src;
+
+            if (format === 'jpg') {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                        img.src = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+                    });
+
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = filename + '.jpg';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(link.href);
+                        } else {
+                            fallbackDownload(url, filename + '.jpg');
+                        }
+                    }, 'image/jpeg', 0.95);
+                } catch (e) {
+                    console.warn("Canvas conversion failed, falling back to direct download.", e);
+                    fallbackDownload(url, filename + '.jpg');
+                }
+            } else if (format === 'pdf') {
+                try {
+                    if (typeof window.jspdf === 'undefined') {
+                        alert("PDF library is still loading. Please try again in a moment.");
+                        return;
+                    }
+                    const { jsPDF } = window.jspdf;
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                        img.src = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+                    });
+
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    const pdfWidth = img.width;
+                    const pdfHeight = img.height;
+                    
+                    const pdf = new jsPDF({
+                        orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+                        unit: 'px',
+                        format: [pdfWidth, pdfHeight]
+                    });
+                    
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save(filename + '.pdf');
+                } catch (e) {
+                    console.warn("PDF generation failed, opening image in new tab.", e);
+                    window.open(url, '_blank');
+                    alert("Due to browser security restrictions, automatic PDF download is blocked. The image has been opened in a new tab. You can print it as a PDF from there (Ctrl+P / Cmd+P).");
+                }
+            }
+        }
+
+        function fallbackDownload(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImagePreviewModal();
+                closeAboutModalBtn();
+                closeLoginModalBtn();
+                closeMobileMenuBtn();
+            }
+        });
+
+        // ===== CONTACT FORM MAILTO =====
+        function sendMail(event) {
+            event.preventDefault();
+            const subject = document.getElementById('contactSubject').value.trim();
+            const message = document.getElementById('contactMessage').value.trim();
+            if (!subject || !message) return;
+
+            // ⚠️ Replace this email with your actual receiving email address
+            const email = 'apexuzstudios@gmail.com';
+            const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+            window.location.href = mailtoLink;
+        }
+    </script>
+</body>
+</html>
